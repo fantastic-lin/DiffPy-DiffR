@@ -1,0 +1,24 @@
+Package: DiffR
+Title: Single-Cell Entropy and Transcription-Factor Activity
+Version: 1.0.3
+Description: Estimates single-cell differentiation potency using SCENT and
+        its fast proxy CCAT, and estimates tissue-specific transcription-factor
+        regulatory activity using SCIRA.
+Date: 2026-07-18
+Author: Andrew E Teschendorff
+Maintainer: Andrew Teschendorff <andrew@picb.ac.cn>
+Depends: R (>= 3.6)
+Imports: igraph, Matrix, marray, mclust, parallel, qlcMatrix, stats,
+        utils
+Suggests: destiny, roxygen2, BiocStyle, knitr, rmarkdown, SeuratObject
+VignetteBuilder: knitr
+License: GPL-3
+LazyData: false
+LazyDataCompression: xz
+NeedsCompilation: no
+RoxygenNote: 8.0.0
+Encoding: UTF-8
+biocViews: SingleCell, SystemsBiology, Network, CellBiology,
+        GeneExpression, RNASeq, Software, Transcriptomics,
+        Visualization
+Packaged: 2026-09-09 06:00:42 UTC; linlin

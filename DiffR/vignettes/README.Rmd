@@ -1,0 +1,49 @@
+---
+title: "Estimating differentiation potency and transcription-factor activity using SCENT, CCAT and SCIRA"
+author:
+- name: "Andrew E. Teschendorff"
+  affiliation: 
+  - CAS Key Lab of Computational Biology, PICB, SINH
+  - UCL Cancer Institute, University College London
+date: "`r Sys.Date()`"
+package: DiffR
+output:
+  BiocStyle::html_document:
+    toc_float: true
+---
+  
+```{r vignette-options, echo=FALSE, message=FALSE, warning=FALSE}
+require(BiocStyle)
+```
+
+# Summary
+
+The `DiffR` package supports two complementary analyses of single-cell RNA-sequencing data. SCENT and its fast proxy CCAT estimate the differentiation potency of individual cells without requiring prior biological information such as marker expression or sampling time. SCIRA estimates the regulatory activity of tissue-specific transcription factors (TFs) from their target-gene expression patterns.
+
+SCENT is useful when marker genes are affected by dropout, differentiation hierarchies are not well established, or putative cancer stem-cell phenotypes are of interest. SCIRA complements this analysis by assigning an inferred activity score to each TF in each cell.
+
+# Installation
+
+To install:
+```{r install data, eval=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+install.packages(".", repos = NULL, type = "source")
+library(DiffR)
+```
+
+The Chu, liver, and stomach example datasets are distributed separately in
+`DiffR_test_data.tar.gz`. Extract it and configure the resulting directory:
+
+```{r external data, eval=FALSE, echo=TRUE}
+untar("DiffR_test_data.tar.gz")
+Sys.setenv(DIFFR_TEST_DATA_DIR = file.path(getwd(), "DiffR_test_data"))
+load(file.path(Sys.getenv("DIFFR_TEST_DATA_DIR"), "dataChu.rda"))
+```
+
+The PPI and tissue-specific regulon networks remain bundled with DiffR.
+
+
+# References
+
+Teschendorff AE, Enver T.  Single-cell entropy for accurate estimation of differentiation potency from a cell's transcriptome. Nat Commun. 2017 Jun 1;8:15599. doi: 10.1038/ncomms15599
+
+Teschendorff AE, Wang N. Improved detection of tumor suppressor events in single-cell RNA-Seq data. npj Genom Med. 2020 Oct 7;5:43. doi: 10.1038/s41525-020-00151-y.

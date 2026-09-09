@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "DiffPy"
+version = "2.0.0"
+description = "Single-cell potency, signaling entropy, trajectory, and regulon analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "DiffPy contributors"}]
+keywords = ["single-cell", "scRNA-seq", "potency", "entropy", "trajectory", "regulon"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "numpy>=1.23",
+  "scipy>=1.9",
+  "pandas>=1.5",
+  "scikit-learn>=1.2",
+  "numba>=0.57",
+  "joblib>=1.2",
+  "igraph>=0.10",
+]
+
+[project.optional-dependencies]
+docs = ["matplotlib>=3.6"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+diffpy = ["data/**/*", "py.typed"]

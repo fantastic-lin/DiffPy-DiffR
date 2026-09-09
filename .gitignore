@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.Rhistory
+.RData
+.Rproj.user/
+build/
+dist/
+_site/
+
+# Local editor and test caches
+.DS_Store
+.pytest_cache/
+.coverage
+htmlcov/

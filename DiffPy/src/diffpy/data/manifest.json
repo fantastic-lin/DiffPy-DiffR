@@ -1,0 +1,73 @@
+{
+  "chu": {
+    "description": "Human embryonic stem and endothelial progenitor cells; expression is library-size normalized with cell-dependent scale factors but is not log-transformed",
+    "objects": {
+      "expression": {"kind": "matrix", "file": "expression.npz", "rows": "expression.rows.txt.gz", "columns": "expression.cols.txt.gz", "shape": [18935, 479], "nnz": 4431920},
+      "phenotype": {"kind": "vector", "file": "phenotype.csv.gz", "dtype": "character", "length": 479},
+      "signaling_entropy": {"kind": "vector", "file": "signaling_entropy.csv.gz", "dtype": "double", "length": 479}
+    }
+  },
+  "liver": {
+    "description": "Developing human liver single-cell expression time course; expression is library-size normalized with cell-dependent scale factors and transformed as log2(x + 1.1)",
+    "objects": {
+      "expression": {"kind": "matrix", "file": "expression.npz", "rows": "expression.rows.txt.gz", "columns": "expression.cols.txt.gz", "shape": [16119, 447], "nnz": 7205193},
+      "stage_codes": {"kind": "vector", "file": "stage_codes.csv.gz", "dtype": "double", "length": 447},
+      "plot_colors": {"kind": "vector", "file": "plot_colors.csv.gz", "dtype": "character", "length": 7}
+    }
+  },
+  "stomach": {
+    "description": "Human stomach epithelial cells from two differentiation states; expression is library-size normalized to a scale factor of 10,000 and transformed as log2(x + 1)",
+    "objects": {
+      "expression": {"kind": "matrix", "file": "expression.npz", "rows": "expression.rows.txt.gz", "columns": "expression.cols.txt.gz", "shape": [16090, 400], "nnz": 118047},
+      "differentiation_state": {"kind": "vector", "file": "differentiation_state.csv.gz", "dtype": "factor", "length": 400, "levels": ["undiffEpi", "diffEpi"]}
+    }
+  },
+  "ppi_2012": {
+    "description": "Pathway Commons PPI network released in 2012",
+    "objects": {
+      "adjacency": {"kind": "matrix", "file": "adjacency.npz", "rows": "adjacency.rows.txt.gz", "columns": "adjacency.cols.txt.gz", "shape": [8434, 8434], "nnz": 607200}
+    }
+  },
+  "ppi_2016": {
+    "description": "Pathway Commons PPI network released in 2016",
+    "objects": {
+      "adjacency": {"kind": "matrix", "file": "adjacency.npz", "rows": "adjacency.rows.txt.gz", "columns": "adjacency.cols.txt.gz", "shape": [11751, 11751], "nnz": 3008972}
+    }
+  },
+  "TF-regulon_network_breast": {
+    "description": "Breast epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 9], "nnz": 492}}
+  },
+  "TF-regulon_network_colon": {
+    "description": "Colon epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 17], "nnz": 557}}
+  },
+  "TF-regulon_network_esophagus": {
+    "description": "Esophageal epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 30], "nnz": 1347}}
+  },
+  "TF-regulon_network_stomach": {
+    "description": "Stomach epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 32], "nnz": 1413}}
+  },
+  "TF-regulon_network_kidney": {
+    "description": "Kidney epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 14], "nnz": 1006}}
+  },
+  "TF-regulon_network_liver": {
+    "description": "Liver epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 14], "nnz": 670}}
+  },
+  "TF-regulon_network_lung": {
+    "description": "Lung epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 8], "nnz": 297}}
+  },
+  "TF-regulon_network_pancreas": {
+    "description": "Pancreatic epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 24], "nnz": 1062}}
+  },
+  "TF-regulon_network_skin": {
+    "description": "Skin epithelial transcription-factor regulon",
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 20], "nnz": 1123}}
+  }
+}

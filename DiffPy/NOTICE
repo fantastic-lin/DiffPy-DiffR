@@ -1,0 +1,10 @@
+SCENT-SCIRA Python
+==================
+
+This software implements methods originally published and distributed with
+the GPL-3 SCENT/SCIRA software. It has been independently organized as an
+idiomatic Python package and retains the GPL-3.0-only license required by its
+scientific and software provenance.
+
+See the package documentation for method references and citation guidance.
+

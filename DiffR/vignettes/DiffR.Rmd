@@ -1,0 +1,293 @@
+---
+title: "A brief tutorial for estimating differentiation potency and transcription-factor activity using SCENT, CCAT and SCIRA"
+author:
+- name: "Andrew E. Teschendorff"
+  affiliation: 
+  - CAS Key Lab of Computational Biology, PICB, SINH
+  - UCL Cancer Institute, University College London
+date: "`r Sys.Date()`"
+package: DiffR
+output:
+  BiocStyle::html_document:
+    toc_float: true
+bibliography: DiffR.bib
+vignette: >
+  %\VignetteIndexEntry{Single Cell Entropy - R package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+  
+```{r vignette-options, echo=FALSE, message=FALSE, warning=FALSE}
+require(BiocStyle)
+```
+
+# Introduction
+
+The `DiffR` package supports two complementary analyses of single-cell RNA-sequencing (scRNA-Seq) data. First, SCENT and its fast proxy CCAT estimate the differentiation potency of individual cells without requiring prior knowledge such as marker expression or sampling time. This is useful when marker genes are affected by dropout, differentiation hierarchies are not well established, or putative cancer stem-cell phenotypes are of interest. Second, the SCIRA method estimates the regulatory activity of tissue-specific transcription factors (TFs) from their target-gene expression patterns [@SCIRA]. Thus, SCENT and CCAT assign a potency estimate to each cell, whereas SCIRA assigns an inferred activity score to each TF in each cell.
+
+This vignette first presents the complete SCENT and CCAT workflow, including potency-state and differentiation-trajectory inference. It then introduces the `SciraEstRegAct` function and illustrates SCIRA with a human stomach epithelial-cell dataset. The following inputs are needed for SCENT and CCAT:
+
+* Normalized scRNA-Seq data
+* A functional gene network
+
+The input required for SCIRA is:
+
+* A normalized, log-transformed scRNA-seq expression matrix
+
+All functions that take an expression matrix as input—`DoIntegPPI`, `CompCCAT`, `InferDMAPandRoot`, and `SciraEstRegAct`—accept both base R dense matrices and `Matrix::dgCMatrix` sparse matrices. The examples use the sparse expression matrices `scChuSparse.m`, `scLiverSparse.m`, and `scStomachSparse.m` from the separate `DiffR_test_data.tar.gz` archive. The PPI and tissue-specific regulon networks remain bundled with DiffR.
+
+How to prepare these inputs for using in `SCENT` and `SCIRA` will be described in detail in the following sections.
+
+# External test data
+
+Extract `DiffR_test_data.tar.gz` once and set `DIFFR_TEST_DATA_DIR` to the resulting top-level directory:
+
+```{r configure external data, eval=FALSE, echo=TRUE}
+untar("DiffR_test_data.tar.gz")
+Sys.setenv(DIFFR_TEST_DATA_DIR = file.path(getwd(), "DiffR_test_data"))
+```
+
+The examples below load the required `.rda` file from that directory. This is required only for the Chu, liver, and stomach examples; bundled networks continue to use `data()`.
+
+# The functional gene network
+
+In `SCENT`, the estimation of differentiation potency of single-cells can be done in two different ways: (i) using the SCENT algorithm which approximates differentiation potency in terms of the entropy of a diffusion process on a gene network, also called signaling entropy rate [@SCENT1], or (ii) via a fast proxy of SCENT called CCAT (Correlation of Connectome and Transcriptome). The latter approach uses the same network as in SCENT, but only uses the connectivity or degree of the genes in the network. The gene-network we recommend to use is a protein-protein interaction (PPI) network, because more potent cells tend to overexpress protein network hubs [@SCENT1]. Indeed, although PPI networks are mere caricatures of the underlying signaling networks, ignoring time, spatial and biological contexts, our approach is to use the measured gene-expression profile of a cell to provide the biological context, in effect weighting the edges in the PPI network according to how highly expressed the proteins in the edge-pair are. For details we refer the reader to our publications given at the end of this vignette [@SCENT1; @SCENT4]. The specific PPI network we use here is derived from [Pathway Commons](https://www.pathwaycommons.org), which is an integrated resource collating together PPIs from several distinct sources. In particular, the network is constructed by integrating the following sources: the Human Protein Reference Database (HPRD), the National Cancer Institute Nature Pathway Interaction Database (NCI-PID), the Interactome (Intact) and the Molecular Interaction Database (MINT).
+
+Within the `DiffR` package we provide two PPI networks, both derived from PathwayCommons, corresponding to two different versions under filenames "net17Jan16.rda" and "net13Jun12.rda"(early version). You can access these with the `data` function. Here we use the early version network:
+
+```{r load network information, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+library(DiffR);
+data(net13Jun12);
+print(dim(net13Jun12.m));
+```
+We can see that the PPI network contains over 8000 proteins/genes. Importantly, the nodes (genes) in this PPI network are labeled with Entrez gene IDs, and entries take on values "0" and "1", with "0" indicating that there is no interaction or connection between the two genes, and ”1” indicating that an interaction has been reported. It is also important to note that the diagonal entries are set to "0".
+
+# Single cell RNA-seq data
+
+We shall assume that we already have a matrix containing expression count data summarised at the level of genes and that quality control has been performed removing poor quality cells. We shall further assume that the scRNA-Seq data has been normalized for library size using cell-specific scale factors, for instance as implemented in the `scater` R-package. **Importantly, however, the data has not yet been log-transformed.** We shall soon see why.
+
+For ease of illustration, we shall first use a scRNA-Seq dataset from [@ChuData], generated with the Fluidigm C1 platform. This scRNA-Seq dataset profiled over 1000 cells including pluripotent hESCs and non-pluripotent progenitor cells from the 3 main germ layers (ectoderm, mesoderm and endoderm). Due to package size restriction, we only upload a subset of 479 cells (374 are pluripotent and 105 are multipotent progenitors of endothelial cells). Below we load in the data:
+
+```{r quick load example data, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+test_data_dir <- Sys.getenv("DIFFR_TEST_DATA_DIR")
+if (!nzchar(test_data_dir)) stop("Set DIFFR_TEST_DATA_DIR after extracting DiffR_test_data.tar.gz")
+load(file.path(test_data_dir, "dataChu.rda"))
+print(dim(scChuSparse.m));
+print(summary(factor(phenoChu.v)));
+```
+If the user is interested, the full dataset can be downloaded from the GEO website under accession number [GSE75748](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75748), and the specific file to download is the supplementary file "GSE75748_sc_cell_type_ec.csv.gz". Note that this data matrix has not been normalized so the user would need to do QC and library-size normalization separately using his/her favourite package.
+
+Log-transforming the library-size normalized scRNA-Seq data matrix is important to stabilize the variance of highly expressed genes. Because SCENT uses ratios of expression values it is important to avoid 0 values after log-transformation. For this reason, we use a pseudocount of +1.1 instead of +1. This particular offset ensures that the minimum value after log-transformation is greater than zero. However, for CCAT, 0 values in the data matrix are allowed, so below we also define a separate log-transformed data matrix using the usual pseudocount of +1. This is convenient to retain the sparse nature of the data matrix if it happens to be of the dgC-class (see `Matrix` package).
+ 
+```{r normalization, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+lscChu.m <- log2(scChuSparse.m+1.1);
+range(lscChu.m);
+lscChu0.m <- log2(scChuSparse.m+1);
+range(lscChu0.m);
+```
+
+We note that the rownames of the data matrix are also annotated to Entrez gene IDs, i.e. the same gene identifier used in the PPI network. If the gene identifiers are different, say if the count-matrix is annotated to gene-symbols, **then these must be converted to unique Entrez gene IDs before proceeding**.
+
+# Differentiation potency estimation using Signaling Entropy Rate (SR)
+
+The estimation of differentiation potency consists of two major steps:
+
+* Integration of the scRNA-Seq data with the user-defined gene functional network.
+* Computation of the Signaling Entropy Rate (denoted SR) which is used to approximate differentiation potency of single cells.
+
+A typical workflow starts with the integration of the scRNA-Seq data with the user-defined gene functional network. This is accomplished with the `DoIntegPPI` function:
+
+```{r integrate scRNA-seq and PPI network, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+integ.l <- DoIntegPPI(exp.m = lscChu.m, ppiA.m = net13Jun12.m)
+str(integ.l)
+```
+
+The `DoIntegPPI` function integrates the expression data with the PPI network, and extracts the maximally connected subnetwork, specified by the *adjMC* output argument. In addition, it returns the scRNA-Seq data matrix, defined for the overlapping genes, as specified by the *expMC* output argument.
+
+With the output object *integ.l*, we can now proceed to compute the SR values for any given cell, using the `CompSRana` function. It takes three objects as input:
+
+* The output object *integ.l* from `DoIntegPPI` function
+* *local*, a logical parameter to tell the function whether to report back the normalized local, i.e. gene-centric, signaling entropies. This can be useful if one is interested in identifying genes that drive potency. See [@SCENT1].
+* *mc.cores*, the number of cores to use, i.e. at most how many child processes will be run simultaneously. 
+
+```{r compute SR, eval=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+sr.o <- CompSRana(integ.l, local = FALSE, mc.cores = 4)
+```
+
+The output argument *sr.o* is a list with the following output elements:
+
+* *SR*: the SR value of the cells.
+* *inv*: a matrix specifying the invariant measures, or steady-state probabilities, for each cell. That is, each column labels a cell (sample) and is of length equal to the number of nodes in the *adjMC* matrix, with its entries adding to 1.
+* *locs*: a matrix containing the unnormalized local signaling entropies, and therefore row number equals the number of nodes in the *adjMC* matrix, column number equals the number of cells.
+* *nlocs*: if local=TRUE, a matrix containing normalized local signaling entropies.
+
+One note with the above step: the local gene-based entropies can be used in downstream analyses for ranking genes according to differential entropy, but only if appropriately normalized. For instance, they could be used to identify the main genes driving changes in the global signaling entropy rate of the network. However, if the user only wishes to estimate potency, specifying *local=FALSE* is fine, which will save some RAM on the output object, which is why we make it the default option.
+
+Because the calculation of SR takes a couple of minutes, we use the precomputed values stored in the vector `srChu.v` which is part of `dataChu`. We can now check if SR discriminates hESCs from the multipotent progenitor endothelial cells:
+
+```{r boxplotSR, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+boxplot(srChu.v ~ phenoChu.v, main = "SR potency estimates", xlab = "Cell Type", ylab = "SR")
+```
+Here *hESC* and *EC* refer to human embryonic stem cells and progenitors of endothelial cells, respectively.
+Of note, the SR values are normalized to be between 0 and 1, with higher SR values indicative of higher potency.
+
+# Differentiation potency estimation using CCAT
+
+CCAT is a fast proxy for SR, which we strongly recommend for use on larger scRNA-Seq datasets profiling on the order of ten or hundred thousand cells, or higher (millions of cells). The procedure for estimating differentiation potency using CCAT is similar to SR.
+
+```{r evalCCAT, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+ccat.v <- CompCCAT(exp.m = lscChu0.m, ppiA.m = net13Jun12.m);
+```
+
+We can now check if CCAT discriminates cells according to their potency:
+```{r boxplotCCAT, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+boxplot(ccat.v ~ phenoChu.v, main = "CCAT potency estimates", xlab = "Cell Type", ylab = "CCAT")
+```
+Because CCAT is just a Pearson Correlation Coefficient between the connectome and transcriptome of a cell, it can take on values between -1 and 1, with increasing values indicating higher potency.
+
+# Infer the potency states in a cell population
+
+Having estimated the cell potency values, it may be of interest to determine if these values cluster into various potency states. This can be accomplished with the `InferPotencyStates` function, which fits a mixture of Gaussians to logit-transformed SR values, or Z-transformed CCAT values. If a categorical phenotype or labeling information of cells is available, the function will return the distribution of inferred potency states in each stratum defined by the phenotype. For instance, we could use the known hESC/EC label:
+
+```{r InferPotency, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+pot.o <- InferPotencyStates(
+    potest.v = srChu.v,
+    type = "SR",
+    pheno.v = phenoChu.v
+)
+```
+
+and the distribution of potency states is:
+
+```{r InfPotencyOut, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+pot.o$distr
+```
+
+Thus, we have inferred 2 potency states, with the first potency state being occupied by 364 human embryonic stem cells (hESC), while the second lower potency state is enriched for multipotent progenitors of endothelial cells (ECs). Of note, SR predicts a small number of hESCs that have lower potency, representing primed states [@SCENT1].
+
+
+# Integration with diffusion maps to infer differentiation trajectories
+
+Potency estimates obtained using SR or CCAT can be integrated with diffusion maps from the R-package `destiny` to assign the root-states when inferring lineage trajectories. We illustrate this in the context of a scRNA-Seq dataset representing a differentiation timecourse of mouse hepatoblasts into hepatocytes and cholangiocytes from [@YangLiver2017]. First, we load in the data:
+
+```{r loadLiverData, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+load(file.path(test_data_dir, "dataLiver.rda"));
+dim(scLiverSparse.m);
+```
+
+The scRNA-Seq has already been normalized for library size, log-transformed, and with genes mapped to 16119 unique human homologs. In total there are 447 cells, from seven different time points (embryonic days 10 to 15, and day 17). To see the distribution of cells among these timepoints:
+
+```{r phenoLiver, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+summary(factor(phenoLiver.v));
+```
+
+Next, we compute the CCAT values and study its pattern of variation across timepoints
+
+```{r compCCATliver, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+ccat.v <- CompCCAT(exp.m = scLiverSparse.m, ppiA.m = net13Jun12.m);
+boxplot(ccat.v ~ names(phenoLiver.v),xlab="Embryonic stages",ylab="CCAT",col=colorLiver.v);
+```
+
+As we can see, CCAT predicts high potency for hepatoblasts at E10, and low potency for cells at the
+end of the timecourse, as required.
+
+Next, we want to see how we can use CCAT to inform the choice of root-state for inferring lineage trajectories. While in principle we could pick the cell with highest CCAT value as root-state, we strive to provide a method that is more robust. This is achieved by the function `InferDMAPandRoot`. Briefly, in this method, we use the `destiny` package to construct the diffusion map and Markov Chain transition matrix over all cells. Subsequently, we apply the walktrap clustering algorithm on the inferred graph transition matrix, but only using the cells of highest potency. The proportion of highest potency cells is determined by the `pctop` argument in the function. The walktrap algorithm learns modules within the graph specified by the Markov transition matrix, and we deem the largest cluster to represent a robust root-state. The root-cell is then identified as the cell within the root-state that is closest to the medoid of the cluster. We now run the function:
+
+```{r InferRoot, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+inf.o <- InferDMAPandRoot(pot.v = ccat.v, exp.m = scLiverSparse.m, kDMAP=30, pctop=0.05);
+```
+
+In order to check the output, we first plot the distribution of cells along the top 2 diffusion components, coloring cells by timepoint, and indicating the root-cell with a red square box:
+
+```{r plotOut1, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+plot(inf.o$dc[,1],inf.o$dc[,2],col=colorLiver.v[phenoLiver.v],xlab="DC1",ylab="DC2",axes=FALSE,main="Cells colored by timepoint")
+points(inf.o$dc[inf.o$root,1],inf.o$dc[inf.o$root,2],pch=22,col="red",cex=2)
+text(inf.o$dc[inf.o$root,1],inf.o$dc[inf.o$root,2],label="Root",font=2,col="red",pos=1)
+par(xpd=TRUE);
+legend(x=inf.o$dc[inf.o$root,1],y=0.1,levels(factor(names(phenoLiver.v))),pch=21,col=colorLiver.v,cex=.75);
+```
+
+We next display the same plot, but now coloring cells by CCAT value:
+
+```{r plotOut2, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+plot(inf.o$dc[,1],inf.o$dc[,2],col=inf.o$color,xlab="DC1",ylab="DC2",axes=FALSE,main="Cells colored by CCAT");
+points(inf.o$dc[inf.o$root,1],inf.o$dc[inf.o$root,2],pch=22,col="red",cex=2);
+text(inf.o$dc[inf.o$root,1],inf.o$dc[inf.o$root,2],label="Root",font=2,col="red",pos=1)
+par(xpd=TRUE);
+legend(x=inf.o$dc[inf.o$root,1],y=0.1,c("High","Low"),pch=21,col=c("black","skyblue"));
+```
+
+This confirms that the root-cell is a cell of very high potency as estimated using CCAT. Having inferred the root-cell, we can now estimate the diffusion pseudotime (DPT) and plot the inferred lineage trajectories:
+
+```{r plotOut3, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+dptCCAT.o <- destiny::DPT(inf.o$dmap,tips=inf.o$root);
+destiny::plot(dptCCAT.o,dcs=1:2,col_by="dpt",paths_to=1:3,pch=23,col_path=marray::maPalette(low="darkgreen",mid="green",high="yellow",k=3),lwd=3);
+```
+
+Thus, there are two main trajectories that start at the root-cell, with one trajectory describing differentiation into hepatocytes and another describing differentiation into cholangiocytes, see [@SCIRA].
+
+# Transcription-factor regulatory activity estimation using SCIRA
+
+SCIRA was designed to infer tissue-specific TF activity at single-cell resolution from the expression of each TF's regulon, thereby reducing reliance on the potentially sparse expression measurement of the TF itself [@SCIRA]. A regulon is represented as a gene-by-TF matrix whose entries indicate positive, inhibitory or absent regulatory associations. For each TF and cell, `SciraEstRegAct` fits a simple linear regression of expression on the corresponding regulon weights and reports the t-statistic of the slope. The result is an inferred regulatory-activity score, not the expression level of the TF.
+
+The package contains nine tissue-specific epithelial TF-regulon networks used by SCIRA. Their dimensions are:
+
+| Data file | R object | Dimension | Role or tissue |
+|:--|:--|:--|:--|
+| `netBREAST.m.rda` | `netBREAST.m` | 18,165 x 9 | Breast regulon |
+| `netCOL.m.rda` | `netCOL.m` | 18,165 x 17 | Colon regulon |
+| `netESOPH.m.rda` | `netESOPH.m` | 18,165 x 30 | Esophagus regulon |
+| `netGAST2.m.rda` | `netGAST2.m` | 18,165 x 32 | Stomach regulon |
+| `netKID.m.rda` | `netKID.m` | 18,165 x 14 | Kidney regulon |
+| `netLIV22.m.rda` | `netLIV22.m` | 18,165 x 14 | Liver regulon |
+| `netLUNGm.m.rda` | `netLUNGm.m` | 18,165 x 8 | Lung regulon |
+| `netPANC.m.rda` | `netPANC.m` | 18,165 x 24 | Pancreas regulon |
+| `netSKIN.m.rda` | `netSKIN.m` | 18,165 x 20 | Skin regulon |
+
+For a SCIRA matrix input, genes must be rows, cells must be columns, and row names must be unique human Entrez Gene IDs. `norm = "z"` performs gene-wise z-score normalization across cells, whereas `norm = "c"` performs gene-wise mean centering. The `tissue` argument selects one of the nine regulon networks automatically.
+
+We illustrate `SciraEstRegAct` using stomach scRNA-Seq data from the human cell landscape [CZ CELLxGENE Discover collection](https://cellxgene.cziscience.com/collections/38833785-fac5-48fd-944a-0f62a4c23ed1) [@Han2020]. Fetal stomach epithelial progenitors from the embryonic and 11th week post-fertilization stages were classified as undifferentiated epithelial cells (`undiffEpi`). Gastric chief cells and epithelial cells from donors aged 45, 59 or 62 years were classified as differentiated epithelial cells (`diffEpi`).
+
+The expression values were library-size normalized with a scale factor of 10,000 and log-transformed with a pseudocount of 1. The genes were mapped to unique human Entrez Gene IDs. Because of package-size restrictions, `dataStomach.rda` contains a subset of 400 cells: 200 `undiffEpi` cells and 200 `diffEpi` cells, measured across 16,090 genes intersected with the stomach epithelial-specific TF-regulon network. Intersecting genes in advance is not required by `SciraEstRegAct`.
+
+```{r loadSCIRAStomachData, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+load(file.path(test_data_dir, "dataStomach.rda"))
+print(dim(scStomachSparse.m))
+print(summary(factor(diffstateStomach.v)))
+
+```
+
+Next, we estimate the activities of the stomach-specific TFs. The output matrix contains TFs in rows and cells in columns:
+
+```{r estimateSCIRAStomachActivity, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+stomachActSparse.m <- SciraEstRegAct(
+    exp.m = scStomachSparse.m,
+    tissue = "stomach",
+    norm = "z",
+    ncores = 1
+)
+
+dim(stomachActSparse.m)
+```
+
+Finally, we calculate the average TF activity (AvTFA) of each cell and compare the two differentiation states with a boxplot:
+
+```{r boxplotSCIRAStomachActivity, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+avTFA.v <- colMeans(stomachActSparse.m, na.rm = TRUE)
+
+boxplot(avTFA.v ~ diffstateStomach.v,
+    xlab = "Epithelial differentiation state",
+    ylab = "AvTFA",
+    main = "Stomach epithelial TF-regulatory activity")
+```
+
+Higher AvTFA values indicate higher average activity across the 32 stomach-specific TFs represented by `netGAST2.m`. The boxplot summarizes the distribution of cell-level AvTFA estimates in undifferentiated and differentiated stomach epithelial cells.
+
+
+# Session information
+
+```{r sessionInfo, echo=T}
+sessionInfo()
+```
+
+# References
