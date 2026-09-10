@@ -64,7 +64,7 @@
   },
   "TF-regulon_network_pancreas": {
     "description": "Pancreatic epithelial transcription-factor regulon",
-    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 24], "nnz": 1062}}
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 20], "nnz": 971}}
   },
   "TF-regulon_network_skin": {
     "description": "Skin epithelial transcription-factor regulon",

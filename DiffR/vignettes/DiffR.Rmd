@@ -241,7 +241,7 @@ The package contains nine tissue-specific epithelial TF-regulon networks used by
 | `netKID.m.rda` | `netKID.m` | 18,165 x 14 | Kidney regulon |
 | `netLIV22.m.rda` | `netLIV22.m` | 18,165 x 14 | Liver regulon |
 | `netLUNGm.m.rda` | `netLUNGm.m` | 18,165 x 8 | Lung regulon |
-| `netPANC.m.rda` | `netPANC.m` | 18,165 x 24 | Pancreas regulon |
+| `netPANC.m.rda` | `netPANC.m` | 18,165 x 20 | Pancreas regulon |
 | `netSKIN.m.rda` | `netSKIN.m` | 18,165 x 20 | Skin regulon |
 
 For a SCIRA matrix input, genes must be rows, cells must be columns, and row names must be unique human Entrez Gene IDs. `norm = "z"` performs gene-wise z-score normalization across cells, whereas `norm = "c"` performs gene-wise mean centering. The `tissue` argument selects one of the nine regulon networks automatically.
