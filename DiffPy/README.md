@@ -2,11 +2,10 @@
 
 DiffPy is a Python toolkit for estimating differentiation potency,
 quantifying signaling entropy, constructing potency-guided diffusion
-trajectories, and inferring tissue-specific transcription-factor activity from
-single-cell RNA-sequencing data.
+trajectories, and inferring tissue-specific transcription-factor regulatory activity in epithelial cells from single-cell RNA-sequencing data.
 
 The package is designed for labeled gene-by-cell matrices and supports both
-dense NumPy arrays and SciPy sparse matrices. Both PPI networks and nine tissue
+dense NumPy arrays and SciPy sparse matrices. All four PPI networks and nine tissue
 regulons are included. The larger example expression cohorts are distributed
 separately in ``DiffPy_test_data.zip``.
 
@@ -50,20 +49,20 @@ chu = load_dataset("chu", data_dir="/path/to/diffpy-data")
 
 | Function | Purpose |
 |---|---|
-| `integrate_expression_network` | Apply `log2(x + 1.1)`, match expression genes to a PPI network, and retain the largest connected component |
-| `compute_signaling_entropy` | Calculate normalized global and gene-local signaling entropy |
-| `compute_ccat` | Estimate potency rapidly from expression/connectivity correlation |
-| `infer_potency_states` | Fit BIC-selected Gaussian mixtures and order discrete potency states |
-| `infer_diffusion_root` | Construct adaptive diffusion coordinates and infer a high-potency root cell |
+| `DoIntegPPI` | Apply `log2(x + 1.1)`, match expression genes to a PPI network, and retain the largest connected component |
+| `CompSRana` | Calculate normalized global and gene-local signaling entropy |
+| `CompCCAT` | Estimate potency rapidly from expression/connectivity correlation |
+| `InferPotencyStates` | Fit BIC-selected Gaussian mixtures and order discrete potency states |
+| `InferDMAPandRoot` | Construct adaptive diffusion coordinates and infer a high-potency root cell |
 | `compute_diffusion_pseudotime` | Calculate root-based DPT, branches, tips, and smoothed lineage paths |
-| `estimate_regulatory_activity` | Estimate tissue-specific transcription-factor activity from regulon targets |
+| `SciraEstRegAct` | Estimate tissue-specific transcription-factor activity from regulon targets |
 
 Every public function has a detailed NumPy-style docstring:
 
 ```python
-from diffpy import compute_ccat
+from diffpy import CompCCAT
 
-help(compute_ccat)
+help(CompCCAT)
 ```
 
 ## Matrix conventions
@@ -83,7 +82,7 @@ expression = LabeledMatrix(
 )
 ```
 
-`integrate_expression_network()` requires nonnegative, library-size-normalized,
+`DoIntegPPI()` requires nonnegative, library-size-normalized,
 unlogged expression and always applies `log2(x + 1.1)`. The transformed matrix
 is dense because every sparse structural zero becomes `log2(1.1)`, which is
 nonzero. If the input maximum is below 100, the function emits a warning that
@@ -92,7 +91,7 @@ the matrix may already be log-transformed; this threshold is only a heuristic.
 The test-data Chu expression matrix meets this input requirement and can be
 supplied directly. The test-data Liver and Stomach matrices are already
 log-transformed and should not be passed directly to
-`integrate_expression_network()`; use corresponding unlogged,
+`DoIntegPPI()`; use corresponding unlogged,
 library-size-normalized matrices instead. Liver remains suitable for the CCAT
 and trajectory examples, and Stomach remains suitable for the
 regulatory-activity example.
@@ -105,21 +104,21 @@ preserves sparse zeros and emits a `RuntimeWarning` when applied.
 
 ```python
 from diffpy import (
-    compute_ccat,
-    compute_signaling_entropy,
-    infer_potency_states,
-    integrate_expression_network,
+    CompCCAT,
+    CompSRana,
+    InferPotencyStates,
+    DoIntegPPI,
 )
 from diffpy.datasets import load_dataset, load_ppi
 
 chu = load_dataset("chu")
-network = load_ppi("2012")
+network = load_ppi("ppi_PC_2016")
 
-integrated = integrate_expression_network(chu["expression"], network)
-entropy = compute_signaling_entropy(integrated, n_jobs=4)
-ccat = compute_ccat(chu["expression"], network)
+integrated = DoIntegPPI(chu["expression"], network)
+entropy = CompSRana(integrated, n_jobs=4)
+ccat = CompCCAT(chu["expression"], network)
 
-states = infer_potency_states(
+states = InferPotencyStates(
     entropy.signaling_entropy,
     score_type="signaling_entropy",
     phenotype=chu["phenotype"],
@@ -133,16 +132,16 @@ print(states.distribution)
 
 ```python
 from diffpy import (
-    compute_ccat,
+    CompCCAT,
     compute_diffusion_pseudotime,
-    infer_diffusion_root,
+    InferDMAPandRoot,
 )
 from diffpy.datasets import load_dataset, load_ppi
 
 liver = load_dataset("liver")
-potency = compute_ccat(liver["expression"], load_ppi("2012"))
+potency = CompCCAT(liver["expression"], load_ppi("ppi_PC_2016"))
 
-trajectory = infer_diffusion_root(
+trajectory = InferDMAPandRoot(
     potency,
     liver["expression"],
     k_neighbors=30,
@@ -168,14 +167,14 @@ changing pairwise geometry, neighborhoods, or biological interpretation.
 ## Regulatory activity
 
 ```python
-from diffpy import estimate_regulatory_activity
+from diffpy import SciraEstRegAct
 from diffpy.datasets import load_dataset
 
 stomach = load_dataset("stomach")
-activity = estimate_regulatory_activity(
+activity = SciraEstRegAct(
     stomach["expression"],
     tissue="stomach",
-    normalization="zscore",
+    norm="z",
     n_jobs=4,
 )
 
@@ -191,6 +190,11 @@ supported. Because transcription factors are rows and cells are columns,
 
 ## Datasets
 
+The four bundled PPI networks are `ppi_PC_2012`, `ppi_PC_2016`,
+`ppi_PC_2024`, and `ppi_string_2020`. Pass a full name to `load_ppi`, for example
+`load_ppi("ppi_PC_2016")`. Year aliases `"2012"`, `"2016"`, `"2024"`, and
+`"2020"` are supported. `load_dataset` accepts all four canonical names.
+
 The examples below assume that ``DIFFPY_DATA_DIR`` points to the extracted
 ``DiffPy_test_data.zip`` directory, as shown under Installation.
 
@@ -199,7 +203,7 @@ from diffpy.datasets import available_datasets, load_dataset, load_ppi, load_reg
 
 print(available_datasets())
 liver = load_dataset("liver")
-network = load_ppi("2016")
+network = load_ppi("ppi_PC_2016")
 stomach_regulon = load_regulon("stomach")
 ```
 

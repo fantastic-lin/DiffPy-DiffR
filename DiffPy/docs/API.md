@@ -18,7 +18,7 @@ representation.
 
 ## Network integration
 
-### `integrate_expression_network(expression, network, ...)`
+### `DoIntegPPI(expression, network, ...)`
 
 Requires nonnegative, library-size-normalized, unlogged expression; always
 applies `log2(x + 1.1)`; matches genes; checks identifier overlap; extracts the
@@ -29,7 +29,7 @@ input may already be log-transformed, but the transformation is still applied.
 
 ## Potency estimates
 
-### `compute_signaling_entropy(integrated, ...)`
+### `CompSRana(integrated, ...)`
 
 Returns `SignalingEntropyResult` with:
 
@@ -39,18 +39,18 @@ Returns `SignalingEntropyResult` with:
 - `normalized_local_entropy`
 - `maximum_entropy`
 
-### `compute_ccat(expression, network, ...)`
+### `CompCCAT(expression, network, ...)`
 
 Returns one connectome-transcriptome Pearson correlation per cell.
 
-### `infer_potency_states(potency, ...)`
+### `InferPotencyStates(potency, ...)`
 
 Returns `PotencyStateResult` with ordered state assignments, optional phenotype
 summaries, transformed values, and the selected Gaussian mixture model.
 
 ## Trajectory
 
-### `infer_diffusion_root(potency, expression, ...)`
+### `InferDMAPandRoot(potency, expression, ...)`
 
 Returns `TrajectoryResult` with:
 
@@ -81,7 +81,7 @@ The default `paths_to=(1, 2, 3)` corresponds to the R vignette's
 
 ## Regulatory activity
 
-### `estimate_regulatory_activity(expression, tissue, ...)`
+### `SciraEstRegAct(expression, tissue, ...)`
 
 Returns a transcription-factor-by-cell DataFrame, or a transcription-factor
 Series for a single named expression profile. When the maximum expression
@@ -94,10 +94,10 @@ The returned DataFrame has transcription factors in rows and cells in columns.
 Calculate the average TF activity for every cell by averaging across rows:
 
 ```python
-activity = estimate_regulatory_activity(
+activity = SciraEstRegAct(
     expression,
     tissue="stomach",
-    normalization="zscore",
+    norm="z",
 )
 average_tf_activity = activity.mean(axis=0)
 ```
@@ -111,5 +111,13 @@ average_tf_activity = activity.mean(axis=0)
 
 The Chu, liver, and stomach cohorts are distributed in
 `DiffPy_test_data.zip`. Extract it and set `DIFFPY_DATA_DIR` to the extraction
-directory, or pass that directory through `data_dir`. Both PPI networks and
+directory, or pass that directory through `data_dir`. All four PPI networks and
 all nine tissue regulons remain bundled with DiffPy.
+
+
+The four bundled PPI networks are `ppi_PC_2012`, `ppi_PC_2016`,
+`ppi_PC_2024`, and `ppi_string_2020`. Pass a full name to `load_ppi`, for example
+`load_ppi("ppi_string_2020")`. Year aliases `"2012"`, `"2016"`, `"2024"`, and
+`"2020"` are supported; the default remains `"2016"`. `load_dataset` accepts
+all four canonical names. External network folders must use canonical names;
+external networks take precedence over bundled networks.

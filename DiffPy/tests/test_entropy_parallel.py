@@ -9,7 +9,7 @@ import unittest
 from diffpy import (
     IntegrationResult,
     LabeledMatrix,
-    compute_signaling_entropy,
+    CompSRana,
 )
 
 
@@ -82,18 +82,18 @@ class ParallelEntropyTests(unittest.TestCase):
                         sparse_expression=sparse_expression,
                         sparse_adjacency=sparse_adjacency,
                     )
-                    single = compute_signaling_entropy(
+                    single = CompSRana(
                         data, include_normalized_local=True, n_jobs=1
                     )
-                    parallel = compute_signaling_entropy(
+                    parallel = CompSRana(
                         data, include_normalized_local=True, n_jobs=2
                     )
                     assert_results_equal(single, parallel)
 
     def test_parallel_without_normalized_local_matches_single_worker(self) -> None:
         data = integrated(sparse_expression=False, sparse_adjacency=True)
-        single = compute_signaling_entropy(data, n_jobs=1)
-        parallel = compute_signaling_entropy(data, n_jobs=2)
+        single = CompSRana(data, n_jobs=1)
+        parallel = CompSRana(data, n_jobs=2)
         self.assertIsNone(single.normalized_local_entropy)
         self.assertIsNone(parallel.normalized_local_entropy)
         np.testing.assert_allclose(
@@ -114,7 +114,7 @@ class ParallelEntropyTests(unittest.TestCase):
 
     def test_zero_workers_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "n_jobs cannot be zero"):
-            compute_signaling_entropy(
+            CompSRana(
                 integrated(sparse_expression=False, sparse_adjacency=False),
                 n_jobs=0,
             )

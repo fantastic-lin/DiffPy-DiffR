@@ -1,7 +1,6 @@
 # DiffPy and DiffR
 
-Python and R tools for single-cell differentiation potency (SCENT and CCAT),
-potency-guided trajectories, and tissue-specific transcription-factor activity
+Python and R tools for single-cell differentiation potency (SCENT and CCAT) and tissue-specific transcription-factor activity
 (SCIRA). Choose the package that matches your analysis language.
 
 | Package | Version | Requirements | Guide |
@@ -9,10 +8,7 @@ potency-guided trajectories, and tissue-specific transcription-factor activity
 | DiffPy | 2.0.0 | Python >= 3.10 | [Python README](DiffPy/README.md) |
 | DiffR | 1.0.3 | R >= 3.6; dependencies may require newer R | [R README](DiffR/README.md) |
 
-[Online tutorials](https://fantastic-lin.github.io/DiffPy-DiffR/) include worked
-analyses and figures. [Release downloads](https://github.com/fantastic-lin/DiffPy-DiffR/releases)
-provide source and example data. The first documentation deployment and release
-must be published before these destinations become available.
+[Release downloads](https://github.com/fantastic-lin/DiffPy-DiffR/releases) provide source and example data.
 
 ## Local installation
 
@@ -37,21 +33,21 @@ python -m pip install "git+https://github.com/fantastic-lin/DiffPy-DiffR.git#sub
 ```
 
 Download `DiffPy_test_data.zip` from Releases and extract it into `diffpy-data`.
-That directory should contain `chu/`, `liver/`, and `stomach/` directly.
+
 
 ```python
-from diffpy import compute_ccat
+from diffpy import CompCCAT
 from diffpy.datasets import load_dataset, load_ppi
 
 chu = load_dataset("chu", data_dir="/absolute/path/to/diffpy-data")
-scores = compute_ccat(chu["expression"], load_ppi("2012"))
+scores = CompCCAT(chu["expression"], load_ppi("ppi_PC_2016"))
 print(scores.head())
 ```
 
 This prints the first cell potency scores. For the complete
 [example script](DiffPy/examples/basic_workflow.py), set `DIFFPY_DATA_DIR` to
-the same extracted directory before running the script. Networks and regulons
-are bundled; expression example datasets are downloaded separately.
+the same extracted directory before running the script. The four PPI networks (`ppi_PC_2012`, `ppi_PC_2016`, `ppi_PC_2024`,
+and `ppi_string_2020`) and regulons are bundled; expression example datasets are downloaded separately.
 
 ## R installation and first example
 
@@ -68,8 +64,8 @@ library(DiffR)
 test_data_dir <- Sys.getenv("DIFFR_TEST_DATA_DIR")
 if (!nzchar(test_data_dir)) stop("Set DIFFR_TEST_DATA_DIR to the extracted DiffR_test_data directory")
 load(file.path(test_data_dir, "dataChu.rda"))
-data(net13Jun12, package = "DiffR")
-scores <- CompCCAT(exp.m = log2(scChuSparse.m + 1), ppiA.m = net13Jun12.m)
+data(ppi_PC_2016, package = "DiffR")
+scores <- CompCCAT(exp.m = log2(scChuSparse.m + 1), ppiA.m = ppi_PC_2016.m)
 head(scores)
 ```
 
@@ -81,10 +77,9 @@ PPI and regulon networks are bundled; expression example datasets are separate.
 
 ## Input conventions
 
-Expression matrices have genes in rows and cells in columns. Match gene IDs
-to the selected network; the R tutorial uses unique human Entrez Gene IDs.
+Expression matrices have genes in rows and cells in columns. Match gene IDs to the selected network (unique human Entrez Gene IDs).
 Read each package's preprocessing instructions carefully: Python
-`integrate_expression_network` applies its own log transform, whereas the R
+`DoIntegPPI` applies its own log transform, whereas the R
 tutorial transforms expression before calling `DoIntegPPI`.
 
 ## Documentation and attribution
@@ -93,9 +88,9 @@ tutorial transforms expression before calling `DoIntegPPI`.
 - [R tutorial source](DiffR/vignettes/DiffR.Rmd), covering SCENT, CCAT and SCIRA
 - [Issues](https://github.com/fantastic-lin/DiffPy-DiffR/issues) for support
 
-DiffPy is GPL-3.0-only; see its [LICENSE](DiffPy/LICENSE) and [NOTICE](DiffPy/NOTICE).
-DiffR declares GPL-3 in its [DESCRIPTION](DiffR/DESCRIPTION). Original author
-and maintainer metadata are preserved. Cite the original methods:
+DiffPy and DiffR are distributed under the GNU General Public License version 3. See DiffPy’s [LICENSE](DiffPy/LICENSE), [NOTICE](DiffPy/NOTICE), and DiffR’s [DESCRIPTION](DiffR/DESCRIPTION) for licensing and attribution details.
+
+Cite the original methods:
 
 - Teschendorff AE, Enver T. Nature Communications (2017), 8:15599.
   DOI: 10.1038/ncomms15599.
@@ -103,4 +98,3 @@ and maintainer metadata are preserved. Cite the original methods:
   DOI: 10.1038/s41525-020-00151-y.
 
 Package sources were extracted from `DiffPy.zip` and `DiffR_1.0.3.tar.gz`.
-See [validation details](VALIDATION.md) for checks performed during reconstruction.

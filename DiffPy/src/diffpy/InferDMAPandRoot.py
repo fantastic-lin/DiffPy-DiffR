@@ -424,7 +424,7 @@ def compute_diffusion_pseudotime(
     Parameters
     ----------
     trajectory
-        Result returned by :func:`infer_diffusion_root`.
+        Result returned by :func:`InferDMAPandRoot`.
     root
         Root cell as a zero-based integer index or cell identifier. The
         trajectory's inferred root is used by default.
@@ -451,14 +451,14 @@ def compute_diffusion_pseudotime(
     Examples
     --------
     >>> from diffpy import (
-    ...     compute_ccat,
+    ...     CompCCAT,
     ...     compute_diffusion_pseudotime,
-    ...     infer_diffusion_root,
+    ...     InferDMAPandRoot,
     ... )
     >>> from diffpy.datasets import load_dataset, load_ppi
     >>> liver = load_dataset("liver", data_dir="/path/to/diffpy-data")
-    >>> potency = compute_ccat(liver["expression"], load_ppi("2012"))
-    >>> trajectory = infer_diffusion_root(potency, liver["expression"])
+    >>> potency = CompCCAT(liver["expression"], load_ppi("2012"))
+    >>> trajectory = InferDMAPandRoot(potency, liver["expression"])
     >>> result = compute_diffusion_pseudotime(trajectory)
     >>> result.pseudotime.loc[result.root_cell]
     0.0
@@ -473,7 +473,7 @@ def compute_diffusion_pseudotime(
     """
 
     if not isinstance(trajectory, TrajectoryResult):
-        raise TypeError("trajectory must be returned by infer_diffusion_root")
+        raise TypeError("trajectory must be returned by InferDMAPandRoot")
     cells = trajectory.diffusion_coordinates.index.astype(str).tolist()
     if root is None:
         root_index = trajectory.root_index
@@ -565,7 +565,7 @@ def compute_diffusion_pseudotime(
     )
 
 
-def infer_diffusion_root(
+def InferDMAPandRoot(
     potency: Iterable[float] | pd.Series,
     expression: Any,
     *,
@@ -622,11 +622,11 @@ def infer_diffusion_root(
 
     Examples
     --------
-    >>> from diffpy import compute_ccat, infer_diffusion_root
+    >>> from diffpy import CompCCAT, InferDMAPandRoot
     >>> from diffpy.datasets import load_dataset, load_ppi
     >>> liver = load_dataset("liver", data_dir="/path/to/diffpy-data")
-    >>> potency = compute_ccat(liver["expression"], load_ppi("2012"))
-    >>> result = infer_diffusion_root(
+    >>> potency = CompCCAT(liver["expression"], load_ppi("2012"))
+    >>> result = InferDMAPandRoot(
     ...     potency, liver["expression"], k_neighbors=30, top_fraction=0.05
     ... )
     >>> result.root_cell in liver["expression"].col_names
@@ -687,7 +687,7 @@ def infer_diffusion_root(
     try:
         import igraph as ig
     except ImportError as error:
-        raise ImportError("infer_diffusion_root requires python-igraph>=0.10") from error
+        raise ImportError("InferDMAPandRoot requires python-igraph>=0.10") from error
     sub = transition[candidate, :][:, candidate].tocoo()
     edge_mask = sub.row <= sub.col
     edges = list(zip(sub.row[edge_mask].tolist(), sub.col[edge_mask].tolist()))

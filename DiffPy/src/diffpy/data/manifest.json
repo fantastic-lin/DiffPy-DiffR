@@ -22,16 +22,28 @@
       "differentiation_state": {"kind": "vector", "file": "differentiation_state.csv.gz", "dtype": "factor", "length": 400, "levels": ["undiffEpi", "diffEpi"]}
     }
   },
-  "ppi_2012": {
+  "ppi_PC_2012": {
     "description": "Pathway Commons PPI network released in 2012",
     "objects": {
       "adjacency": {"kind": "matrix", "file": "adjacency.npz", "rows": "adjacency.rows.txt.gz", "columns": "adjacency.cols.txt.gz", "shape": [8434, 8434], "nnz": 607200}
     }
   },
-  "ppi_2016": {
+  "ppi_PC_2016": {
     "description": "Pathway Commons PPI network released in 2016",
     "objects": {
       "adjacency": {"kind": "matrix", "file": "adjacency.npz", "rows": "adjacency.rows.txt.gz", "columns": "adjacency.cols.txt.gz", "shape": [11751, 11751], "nnz": 3008972}
+    }
+  },
+  "ppi_PC_2024": {
+    "description": "Pathway Commons PPI network released in 2024",
+    "objects": {
+      "adjacency": {"kind": "matrix", "file": "adjacency.npz", "rows": "adjacency.rows.txt.gz", "columns": "adjacency.cols.txt.gz", "shape": [19880, 19880], "nnz": 2288074}
+    }
+  },
+  "ppi_string_2020": {
+    "description": "STRING PPI network released in 2020",
+    "objects": {
+      "adjacency": {"kind": "matrix", "file": "adjacency.npz", "rows": "adjacency.rows.txt.gz", "columns": "adjacency.cols.txt.gz", "shape": [12921, 12921], "nnz": 7188176}
     }
   },
   "TF-regulon_network_breast": {
@@ -64,7 +76,7 @@
   },
   "TF-regulon_network_pancreas": {
     "description": "Pancreatic epithelial transcription-factor regulon",
-    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 24], "nnz": 1062}}
+    "objects": {"regulon": {"kind": "matrix", "file": "regulon.npz", "rows": "regulon.rows.txt.gz", "columns": "regulon.cols.txt.gz", "shape": [18165, 20], "nnz": 971}}
   },
   "TF-regulon_network_skin": {
     "description": "Skin epithelial transcription-factor regulon",

@@ -21,46 +21,104 @@ vignette: >
 require(BiocStyle)
 ```
 
+<style id="diffr-vignette-layout">
+/* Keep this block in the R Markdown source so rebuilt vignettes retain the layout. */
+body { max-width: 1200px; font-size: 15px; line-height: 1.65; color: #263445; }
+.toc-content { padding: 24px 32px 64px; }
+.toc-content p, .toc-content dl { padding: 0; text-align: left; }
+.toc-content h1, .toc-content h2, .toc-content h3,
+.toc-content h4, .toc-content h5, .toc-content h6 {
+  margin: 1.6em 0 .65em; padding: 0; text-indent: 0; line-height: 1.3;
+}
+.toc-content h1 { font-size: 26px; padding-bottom: .35em; border-color: #d9e3ec; }
+.toc-content .header-section-number { float: none; width: auto; margin-right: .45em; color: #63788a; }
+.toc-content ul, .toc-content ol { padding: 0 0 0 1.5em; margin: .7em 0 1.2em; }
+.toc-content li { padding-left: .2em; margin-bottom: .35em; }
+.toc-content li > ul, .toc-content li > ol { margin: .35em 0; }
+.toc-content pre { margin: 1em 0; padding: 14px 18px; border: 1px solid #dde5ec; border-radius: 6px; }
+.toc-content pre code { padding: 0; white-space: pre; }
+.toc-content p code, .toc-content li code { white-space: normal; overflow-wrap: anywhere; }
+.toc-content img { padding: 0; margin: 1em auto; max-width: 100%; height: auto; }
+.toc-content table { margin: 1em 0; width: 100%; display: block; overflow-x: auto; }
+.toc-content th, .toc-content td { padding: 9px 12px; text-align: left; }
+.toc-content #header { margin-bottom: 28px; padding-bottom: 22px; border-bottom: 2px solid #d9e3ec; }
+.toc-content #header .title { margin: 0 0 22px; color: #244d66; font-size: 32px; line-height: 1.25; }
+.toc-content #header .author-name { margin: 0 0 6px; font-size: 18px; font-style: normal; }
+.toc-content #header .author-affiliation { margin: 0 0 18px; font-size: 14px; color: #586675; }
+.toc-content #header .affil-mark { vertical-align: super; font-size: .75em; margin: 0 .25em; }
+.toc-content #header .date,
+.toc-content #header .package,
+.toc-content #header .package + p { display: inline-block; margin: 4px 12px 4px 0; font-size: 14px; font-weight: normal; }
+.toc-content #header .date::before { content: "Document date: "; font-weight: bold; }
+.toc-content #header .package { font-weight: bold; }
+.toc-content #header .package::after { content: ":"; }
+.diffr-guide { padding: 18px 22px; margin-bottom: 30px; border: 1px solid #d9e3ec; border-radius: 6px; background: #f5f9fc; }
+.diffr-guide > p:first-child { margin-top: 0; }
+.diffr-guide > ul:last-child { margin-bottom: 0; }
+div#TOC.tocify { border: 1px solid #d9e3ec; border-radius: 6px; }
+div#TOC.tocify li { padding: 8px 10px; line-height: 1.4; }
+a:focus-visible { outline: 2px solid #1a81c2; outline-offset: 3px; }
+@media (max-width: 767px) {
+  .toc-content { padding: 12px 20px 40px; }
+  .toc-content #header .title { font-size: 26px; }
+  .toc-content h1 { font-size: 23px; }
+  div#TOC.tocify { position: static; max-height: none; }
+}
+@media print {
+  .toc-content { width: 100%; padding: 0; }
+  #TOC { display: none; }
+  .toc-content pre { white-space: pre-wrap; }
+  .toc-content pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
+}
+</style>
+
+<nav class="diffr-guide" aria-label="Workflow guide">
+<p><strong>Choose your workflow</strong></p>
+<ul>
+<li><strong>Prepare your inputs:</strong> configure the example data below, then review the <a href="#the-functional-gene-network">PPI network</a> and <a href="#single-cell-rna-seq-data">expression data</a>.</li>
+<li><strong>Estimate cell potency:</strong> follow <a href="#differentiation-potency-estimation-using-signaling-entropy-rate-sr">SCENT / SR</a> or <a href="#differentiation-potency-estimation-using-ccat">CCAT</a>, then explore <a href="#infer-the-potency-states-in-a-cell-population">potency states</a> and <a href="#integration-with-diffusion-maps-to-infer-differentiation-trajectories">trajectories</a>.</li>
+<li><strong>Estimate transcription-factor activity:</strong> follow the <a href="#transcription-factor-regulatory-activity-estimation-using-scira">SCIRA stomach example</a> after configuring the example-data directory.</li>
+</ul>
+</nav>
+
 # Introduction
 
 The `DiffR` package supports two complementary analyses of single-cell RNA-sequencing (scRNA-Seq) data. First, SCENT and its fast proxy CCAT estimate the differentiation potency of individual cells without requiring prior knowledge such as marker expression or sampling time. This is useful when marker genes are affected by dropout, differentiation hierarchies are not well established, or putative cancer stem-cell phenotypes are of interest. Second, the SCIRA method estimates the regulatory activity of tissue-specific transcription factors (TFs) from their target-gene expression patterns [@SCIRA]. Thus, SCENT and CCAT assign a potency estimate to each cell, whereas SCIRA assigns an inferred activity score to each TF in each cell.
 
-This vignette first presents the complete SCENT and CCAT workflow, including potency-state and differentiation-trajectory inference. It then introduces the `SciraEstRegAct` function and illustrates SCIRA with a human stomach epithelial-cell dataset. The following inputs are needed for SCENT and CCAT:
+This document first presents the complete SCENT and CCAT workflow, including potency-state and differentiation-trajectory inference. It then introduces the `SciraEstRegAct` function and illustrates SCIRA with a human stomach epithelial-cell dataset. The following inputs are needed for SCENT and CCAT:
 
-* Normalized scRNA-Seq data
+* A library-size-normalized scRNA-seq expression matrix
 * A functional gene network
 
 The input required for SCIRA is:
 
 * A normalized, log-transformed scRNA-seq expression matrix
 
-All functions that take an expression matrix as input—`DoIntegPPI`, `CompCCAT`, `InferDMAPandRoot`, and `SciraEstRegAct`—accept both base R dense matrices and `Matrix::dgCMatrix` sparse matrices. The examples use the sparse expression matrices `scChuSparse.m`, `scLiverSparse.m`, and `scStomachSparse.m` from the separate `DiffR_test_data.tar.gz` archive. The PPI and tissue-specific regulon networks remain bundled with DiffR.
+In these expression matrices, rows represent genes and columns represent cells. In the R implementation, `DoIntegPPI()` applies `log2(x + 1.1)` and `CompCCAT()` applies `log2(x + 1)` only when the maximum input value exceeds 100. `SciraEstRegAct()` does not log-transform the input; its `norm` argument controls gene-wise z-scoring or mean centering, which is separate from library-size normalization and log transformation.
+
+All functions that take an expression matrix as input—`DoIntegPPI`, `CompCCAT`, `InferDMAPandRoot`, and `SciraEstRegAct`—accept both base R dense matrices and `Matrix::dgCMatrix` sparse matrices. The Chu, liver, and stomach examples are distributed separately in `DiffR_test_data.tar.gz`. The PPI networks and tissue-specific regulon networks for epithelial cells remain bundled with DiffR.
 
 How to prepare these inputs for using in `SCENT` and `SCIRA` will be described in detail in the following sections.
 
-# External test data
-
-Extract `DiffR_test_data.tar.gz` once and set `DIFFR_TEST_DATA_DIR` to the resulting top-level directory:
+Extract the test-data archive and set `DIFFR_TEST_DATA_DIR` to its top-level directory:
 
 ```{r configure external data, eval=FALSE, echo=TRUE}
 untar("DiffR_test_data.tar.gz")
 Sys.setenv(DIFFR_TEST_DATA_DIR = file.path(getwd(), "DiffR_test_data"))
 ```
 
-The examples below load the required `.rda` file from that directory. This is required only for the Chu, liver, and stomach examples; bundled networks continue to use `data()`.
-
 # The functional gene network
 
 In `SCENT`, the estimation of differentiation potency of single-cells can be done in two different ways: (i) using the SCENT algorithm which approximates differentiation potency in terms of the entropy of a diffusion process on a gene network, also called signaling entropy rate [@SCENT1], or (ii) via a fast proxy of SCENT called CCAT (Correlation of Connectome and Transcriptome). The latter approach uses the same network as in SCENT, but only uses the connectivity or degree of the genes in the network. The gene-network we recommend to use is a protein-protein interaction (PPI) network, because more potent cells tend to overexpress protein network hubs [@SCENT1]. Indeed, although PPI networks are mere caricatures of the underlying signaling networks, ignoring time, spatial and biological contexts, our approach is to use the measured gene-expression profile of a cell to provide the biological context, in effect weighting the edges in the PPI network according to how highly expressed the proteins in the edge-pair are. For details we refer the reader to our publications given at the end of this vignette [@SCENT1; @SCENT4]. The specific PPI network we use here is derived from [Pathway Commons](https://www.pathwaycommons.org), which is an integrated resource collating together PPIs from several distinct sources. In particular, the network is constructed by integrating the following sources: the Human Protein Reference Database (HPRD), the National Cancer Institute Nature Pathway Interaction Database (NCI-PID), the Interactome (Intact) and the Molecular Interaction Database (MINT).
 
-Within the `DiffR` package we provide two PPI networks, both derived from PathwayCommons, corresponding to two different versions under filenames "net17Jan16.rda" and "net13Jun12.rda"(early version). You can access these with the `data` function. Here we use the early version network:
+DiffR bundles four PPI networks: ppi_PC_2012, ppi_PC_2016, ppi_PC_2024, and ppi_string_2020. Load them with data() using these dataset names. Each dataset contains the corresponding R matrix named with a .m suffix. Here we use the 2016 network:
 
 ```{r load network information, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
 library(DiffR);
-data(net13Jun12);
-print(dim(net13Jun12.m));
+data(ppi_PC_2016);
+print(dim(ppi_PC_2016.m));
 ```
-We can see that the PPI network contains over 8000 proteins/genes. Importantly, the nodes (genes) in this PPI network are labeled with Entrez gene IDs, and entries take on values "0" and "1", with "0" indicating that there is no interaction or connection between the two genes, and ”1” indicating that an interaction has been reported. It is also important to note that the diagonal entries are set to "0".
+We can see that the PPI network contains over 11,000 proteins/genes. Importantly, the nodes (genes) in this PPI network are labeled with Entrez gene IDs, and entries take on values "0" and "1", with "0" indicating that there is no interaction or connection between the two genes, and ”1” indicating that an interaction has been reported. It is also important to note that the diagonal entries are set to "0".
 
 # Single cell RNA-seq data
 
@@ -98,7 +156,7 @@ The estimation of differentiation potency consists of two major steps:
 A typical workflow starts with the integration of the scRNA-Seq data with the user-defined gene functional network. This is accomplished with the `DoIntegPPI` function:
 
 ```{r integrate scRNA-seq and PPI network, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
-integ.l <- DoIntegPPI(exp.m = lscChu.m, ppiA.m = net13Jun12.m)
+integ.l <- DoIntegPPI(exp.m = lscChu.m, ppiA.m = ppi_PC_2016.m)
 str(integ.l)
 ```
 
@@ -118,8 +176,8 @@ The output argument *sr.o* is a list with the following output elements:
 
 * *SR*: the SR value of the cells.
 * *inv*: a matrix specifying the invariant measures, or steady-state probabilities, for each cell. That is, each column labels a cell (sample) and is of length equal to the number of nodes in the *adjMC* matrix, with its entries adding to 1.
-* *locs*: a matrix containing the unnormalized local signaling entropies, and therefore row number equals the number of nodes in the *adjMC* matrix, column number equals the number of cells.
-* *nlocs*: if local=TRUE, a matrix containing normalized local signaling entropies.
+* *locS*: a matrix containing the unnormalized local signaling entropies, and therefore row number equals the number of nodes in the *adjMC* matrix, column number equals the number of cells.
+* *nlocS*: if local=TRUE, a matrix containing normalized local signaling entropies.
 
 One note with the above step: the local gene-based entropies can be used in downstream analyses for ranking genes according to differential entropy, but only if appropriately normalized. For instance, they could be used to identify the main genes driving changes in the global signaling entropy rate of the network. However, if the user only wishes to estimate potency, specifying *local=FALSE* is fine, which will save some RAM on the output object, which is why we make it the default option.
 
@@ -136,7 +194,7 @@ Of note, the SR values are normalized to be between 0 and 1, with higher SR valu
 CCAT is a fast proxy for SR, which we strongly recommend for use on larger scRNA-Seq datasets profiling on the order of ten or hundred thousand cells, or higher (millions of cells). The procedure for estimating differentiation potency using CCAT is similar to SR.
 
 ```{r evalCCAT, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
-ccat.v <- CompCCAT(exp.m = lscChu0.m, ppiA.m = net13Jun12.m);
+ccat.v <- CompCCAT(exp.m = lscChu0.m, ppiA.m = ppi_PC_2016.m);
 ```
 
 We can now check if CCAT discriminates cells according to their potency:
@@ -184,7 +242,7 @@ summary(factor(phenoLiver.v));
 Next, we compute the CCAT values and study its pattern of variation across timepoints
 
 ```{r compCCATliver, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
-ccat.v <- CompCCAT(exp.m = scLiverSparse.m, ppiA.m = net13Jun12.m);
+ccat.v <- CompCCAT(exp.m = scLiverSparse.m, ppiA.m = ppi_PC_2016.m);
 boxplot(ccat.v ~ names(phenoLiver.v),xlab="Embryonic stages",ylab="CCAT",col=colorLiver.v);
 ```
 
@@ -241,12 +299,12 @@ The package contains nine tissue-specific epithelial TF-regulon networks used by
 | `netKID.m.rda` | `netKID.m` | 18,165 x 14 | Kidney regulon |
 | `netLIV22.m.rda` | `netLIV22.m` | 18,165 x 14 | Liver regulon |
 | `netLUNGm.m.rda` | `netLUNGm.m` | 18,165 x 8 | Lung regulon |
-| `netPANC.m.rda` | `netPANC.m` | 18,165 x 24 | Pancreas regulon |
+| `netPANC.m.rda` | `netPANC.m` | 18,165 x 20 | Pancreas regulon |
 | `netSKIN.m.rda` | `netSKIN.m` | 18,165 x 20 | Skin regulon |
 
 For a SCIRA matrix input, genes must be rows, cells must be columns, and row names must be unique human Entrez Gene IDs. `norm = "z"` performs gene-wise z-score normalization across cells, whereas `norm = "c"` performs gene-wise mean centering. The `tissue` argument selects one of the nine regulon networks automatically.
 
-We illustrate `SciraEstRegAct` using stomach scRNA-Seq data from the human cell landscape [CZ CELLxGENE Discover collection](https://cellxgene.cziscience.com/collections/38833785-fac5-48fd-944a-0f62a4c23ed1) [@Han2020]. Fetal stomach epithelial progenitors from the embryonic and 11th week post-fertilization stages were classified as undifferentiated epithelial cells (`undiffEpi`). Gastric chief cells and epithelial cells from donors aged 45, 59 or 62 years were classified as differentiated epithelial cells (`diffEpi`).
+We illustrate `SciraEstRegAct` using stomach scRNA-Seq data from the human cell landscape [CZ CELLxGENE Discover collection](https://cellxgene.cziscience.com/collections/38833785-fac5-48fd-944a-0f62a4c23ed1) [@Han2020]. Fetal stomach epithelial progenitors from the embryonic week 11 stage were classified as undifferentiated epithelial cells (`undiffEpi`). Gastric chief cells and epithelial cells from donors aged 45, 59 or 62 years were classified as differentiated epithelial cells (`diffEpi`).
 
 The expression values were library-size normalized with a scale factor of 10,000 and log-transformed with a pseudocount of 1. The genes were mapped to unique human Entrez Gene IDs. Because of package-size restrictions, `dataStomach.rda` contains a subset of 400 cells: 200 `undiffEpi` cells and 200 `diffEpi` cells, measured across 16,090 genes intersected with the stomach epithelial-specific TF-regulon network. Intersecting genes in advance is not required by `SciraEstRegAct`.
 

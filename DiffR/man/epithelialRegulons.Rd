@@ -30,7 +30,7 @@ data(netSKIN.m)
 \format{
 Each object is a numeric matrix with 18,165 genes. The numbers of
 transcription factors are 9 (breast), 17 (colon), 30 (esophagus), 32
-(stomach), 14 (kidney), 14 (liver), 8 (lung), 24 (pancreas), and 20 (skin).
+(stomach), 14 (kidney), 14 (liver), 8 (lung), 20 (pancreas), and 20 (skin).
 }
 \details{
 The objects are selected automatically from the \code{tissue} argument of

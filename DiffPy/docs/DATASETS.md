@@ -28,8 +28,10 @@ annotation to expression columns by Series index.
 | `chu` | `expression`, `phenotype`, `signaling_entropy` | Separate test data: embryonic stem and endothelial progenitor cells |
 | `liver` | `expression`, `stage_codes`, `plot_colors` | Separate test data: developing liver time course |
 | `stomach` | `expression`, `differentiation_state` | Separate test data: two stomach epithelial differentiation states |
-| `ppi_2012` | `adjacency` | Bundled 2012 PPI network |
-| `ppi_2016` | `adjacency` | Bundled 2016 PPI network |
+| `ppi_PC_2012` | `adjacency` | Bundled Pathway Commons 2012 PPI network |
+| `ppi_PC_2016` | `adjacency` | Bundled Pathway Commons 2016 PPI network |
+| `ppi_PC_2024` | `adjacency` | Bundled Pathway Commons 2024 PPI network |
+| `ppi_string_2020` | `adjacency` | Bundled STRING 2020 PPI network |
 | `TF-regulon_network_breast` | `regulon` | Breast epithelial regulon |
 | `TF-regulon_network_colon` | `regulon` | Colon epithelial regulon |
 | `TF-regulon_network_esophagus` | `regulon` | Esophageal epithelial regulon |
@@ -51,11 +53,16 @@ apply another log transformation to the liver or stomach matrices.
 | Liver | Yes | Yes | `log2(x + 1.1)` |
 | Stomach | Yes, scale factor 10,000 | Yes | `log2(x + 1)` |
 
-`integrate_expression_network()` always applies `log2(x + 1.1)` and therefore
+`DoIntegPPI()` always applies `log2(x + 1.1)` and therefore
 requires unlogged, library-size-normalized expression. The test-data Chu matrix
 meets this requirement and can be supplied directly. The test-data Liver and
 Stomach matrices are already logged and should not be supplied directly to
-this function; use corresponding unlogged, library-size-normalized matrices
-instead. Test-data Liver remains suitable for the demonstrated CCAT and
+this function. Test-data Liver remains suitable for the demonstrated CCAT and
 trajectory workflow, and test-data Stomach remains suitable for the
 regulatory-activity workflow.
+
+
+The four bundled PPI networks are `ppi_PC_2012`, `ppi_PC_2016`,
+`ppi_PC_2024`, and `ppi_string_2020`. Pass a full name to `load_ppi`, for example
+`load_ppi("ppi_string_2020")`. Year aliases `"2012"`, `"2016"`, `"2024"`, and
+`"2020"` are supported.

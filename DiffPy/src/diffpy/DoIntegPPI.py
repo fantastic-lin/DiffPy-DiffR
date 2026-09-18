@@ -54,7 +54,7 @@ class IntegrationResult:
             raise ValueError("expression and adjacency must use the same ordered genes")
 
 
-def integrate_expression_network(
+def DoIntegPPI(
     expression: Any,
     network: Any,
     *,
@@ -110,10 +110,10 @@ def integrate_expression_network(
 
     Examples
     --------
-    >>> from diffpy import integrate_expression_network
+    >>> from diffpy import DoIntegPPI
     >>> from diffpy.datasets import load_dataset, load_ppi
     >>> chu = load_dataset("chu", data_dir="/path/to/diffpy-data")
-    >>> result = integrate_expression_network(chu["expression"], load_ppi("2012"))
+    >>> result = DoIntegPPI(chu["expression"], load_ppi("2012"))
     >>> result.expression.shape[1] == chu["expression"].shape[1]
     True
     >>> result.expression.is_sparse
@@ -157,7 +157,7 @@ def integrate_expression_network(
     if matrix_max(exp_values) < 100:
         warnings.warn(
             "Expression maximum is below 100. The matrix may already be "
-            "log-transformed. integrate_expression_network() expects "
+            "log-transformed. DoIntegPPI() expects "
             "library-size normalized, unlogged expression because it applies "
             "log2(x + 1.1).",
             RuntimeWarning,

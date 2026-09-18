@@ -58,7 +58,7 @@ class PotencyStateResult:
         }
 
 
-def infer_potency_states(
+def InferPotencyStates(
     potency: Iterable[float] | pd.Series,
     *,
     score_type: str = "signaling_entropy",
@@ -106,10 +106,10 @@ def infer_potency_states(
 
     Examples
     --------
-    >>> from diffpy import infer_potency_states
+    >>> from diffpy import InferPotencyStates
     >>> from diffpy.datasets import load_dataset
     >>> chu = load_dataset("chu", data_dir="/path/to/diffpy-data")
-    >>> result = infer_potency_states(
+    >>> result = InferPotencyStates(
     ...     chu["signaling_entropy"],
     ...     score_type="signaling_entropy",
     ...     phenotype=chu["phenotype"],

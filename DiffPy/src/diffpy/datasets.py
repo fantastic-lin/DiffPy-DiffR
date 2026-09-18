@@ -21,7 +21,6 @@ from ._matrix import LabeledMatrix
 DataObject = LabeledMatrix | pd.Series | str
 DataDirectory = str | os.PathLike[str] | None
 
-
 @lru_cache(maxsize=1)
 def _manifest() -> dict[str, Any]:
     """Read and cache packaged dataset metadata.
@@ -94,11 +93,7 @@ def _dataset_base(dataset: str, data_dir: DataDirectory = None) -> Any:
 
     searched: list[str] = []
     for root in _external_roots(data_dir):
-        candidates = (
-            (root, root / dataset)
-            if root.name == dataset
-            else (root / dataset,)
-        )
+        candidates = ((root,) if root.name == dataset else ()) + (root / dataset,)
         for candidate in candidates:
             searched.append(str(candidate))
             if candidate.is_dir():
@@ -195,7 +190,7 @@ def load_dataset(
     ----------
     name
         One value returned by :func:`available_datasets`, such as ``"chu"``,
-        ``"liver"``, ``"stomach"``, ``"ppi_2012"``, or
+        ``"liver"``, ``"stomach"``, ``"ppi_PC_2012"``, or
         ``"TF-regulon_network_stomach"``.
     data_dir
         Optional external data root. The root may contain a directory named
@@ -315,13 +310,12 @@ def load_ppi(
     Parameters
     ----------
     version
-        Network release identifier. Accepted values are ``"2012"`` and
-        ``"2016"``; punctuation and surrounding text are ignored when the
-        four-digit year remains identifiable.
+        Canonical network name: ``"ppi_PC_2012"``, ``"ppi_PC_2016"``,
+        ``"ppi_PC_2024"``, or ``"ppi_string_2020"``. Year aliases ``"2012"``,
+        ``"2016"``, ``"2024"``, and ``"2020"`` are also accepted.
     data_dir
-        Optional directory containing an external ``ppi_2012`` or
-        ``ppi_2016`` folder. When omitted, ``DIFFPY_DATA_DIR`` is searched
-        before the bundled network.
+        Optional directory containing a canonical network folder. When
+        omitted, ``DIFFPY_DATA_DIR`` is searched before the bundled network.
 
     Returns
     -------
@@ -331,7 +325,7 @@ def load_ppi(
     Raises
     ------
     KeyError
-        If neither supported release year can be identified.
+        If the identifier does not identify a supported network.
     FileNotFoundError
         If the selected network is absent from both external and bundled data.
 
@@ -342,11 +336,11 @@ def load_ppi(
     (8434, 8434)
     """
 
-    normalized = re.sub(r"[^0-9]", "", str(version))
-    if "2012" in normalized:
-        dataset = "ppi_2012"
-    elif "2016" in normalized:
-        dataset = "ppi_2016"
-    else:
-        raise KeyError("version must identify the 2012 or 2016 network")
+    canonical_names = ("ppi_PC_2012", "ppi_PC_2016", "ppi_PC_2024", "ppi_string_2020")
+    lookup = {name.lower(): name for name in canonical_names}
+    lookup.update(dict(zip(("2012", "2016", "2024", "2020"), canonical_names)))
+    key = str(version).strip().lower()
+    dataset = lookup.get(key)
+    if dataset is None:
+        raise KeyError(f"Unknown PPI network {version!r}; choose from {', '.join(canonical_names)}")
     return load_dataset(dataset, data_dir=data_dir)["adjacency"]  # type: ignore[return-value]

@@ -6,22 +6,22 @@ available from their defining modules.
 """
 
 from ._matrix import LabeledMatrix, as_labeled_matrix
-from .ccat import compute_ccat
+from .CompCCAT import CompCCAT
 from .datasets import (
     available_datasets,
     load_dataset,
     load_ppi,
     load_regulon,
 )
-from .entropy import SignalingEntropyResult, compute_signaling_entropy
-from .integration import IntegrationResult, integrate_expression_network
-from .potency import PotencyStateResult, infer_potency_states
-from .scira import estimate_regulatory_activity
-from .trajectory import (
+from .CompSRana import SignalingEntropyResult, CompSRana
+from .DoIntegPPI import IntegrationResult, DoIntegPPI
+from .InferPotencyStates import PotencyStateResult, InferPotencyStates
+from .SciraEstRegAct import SciraEstRegAct
+from .InferDMAPandRoot import (
     DiffusionPseudotimeResult,
     TrajectoryResult,
     compute_diffusion_pseudotime,
-    infer_diffusion_root,
+    InferDMAPandRoot,
 )
 
 __version__ = "2.0.0"
@@ -34,15 +34,15 @@ __all__ = [
     "load_ppi",
     "load_regulon",
     "IntegrationResult",
-    "integrate_expression_network",
-    "compute_ccat",
+    "DoIntegPPI",
+    "CompCCAT",
     "SignalingEntropyResult",
-    "compute_signaling_entropy",
+    "CompSRana",
     "PotencyStateResult",
-    "infer_potency_states",
+    "InferPotencyStates",
     "TrajectoryResult",
-    "infer_diffusion_root",
+    "InferDMAPandRoot",
     "DiffusionPseudotimeResult",
     "compute_diffusion_pseudotime",
-    "estimate_regulatory_activity",
+    "SciraEstRegAct",
 ]

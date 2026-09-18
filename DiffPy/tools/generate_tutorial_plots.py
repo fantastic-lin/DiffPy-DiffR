@@ -24,13 +24,13 @@ import numpy as np
 import pandas as pd
 
 from diffpy import (
-    compute_ccat,
+    CompCCAT,
     compute_diffusion_pseudotime,
-    compute_signaling_entropy,
-    estimate_regulatory_activity,
-    infer_diffusion_root,
-    infer_potency_states,
-    integrate_expression_network,
+    CompSRana,
+    SciraEstRegAct,
+    InferDMAPandRoot,
+    InferPotencyStates,
+    DoIntegPPI,
     load_dataset,
     load_ppi,
 )
@@ -125,6 +125,37 @@ def embed_images(html_path: Path) -> None:
     html_path.write_text(html, encoding="utf-8")
 
 
+def update_captions(html_path: Path, summary: dict) -> None:
+    """Keep numerical captions synchronized with the generated results."""
+    sr = summary["chu_signaling_entropy"]
+    ccat = summary["chu_ccat"]
+    liver = summary["liver_ccat"]
+    trajectory = summary["liver_trajectory"]
+    dpt = summary["liver_dpt"]
+    stomach = summary["stomach_regulatory_activity"]
+    states = summary["chu_potency_states"]
+    state_text = "; ".join(
+        f"{group}: " + ", ".join(f"state {state} = {count}" for state, count in counts.items())
+        for group, counts in states.items()
+    )
+    captions = {
+        "chu_signaling_entropy": f'<strong>Calculated result.</strong> Median signaling entropy is {sr["hESC"]["median"]:.4f} in {sr["hESC"]["n"]} hESCs and {sr["EC"]["median"]:.4f} in {sr["EC"]["n"]} endothelial progenitor cells.',
+        "chu_ccat": f'<strong>Calculated result.</strong> Median CCAT is {ccat["hESC"]["median"]:.4f} in hESCs and {ccat["EC"]["median"]:.4f} in endothelial progenitor cells.',
+        "chu_potency_states": f'<strong>Calculated result.</strong> Potency-state assignments (state 1 is highest potency): {state_text}.',
+        "liver_ccat_by_stage": f'<strong>Calculated result.</strong> Median CCAT is {liver["E10"]["median"]:.4f} at E10 and {liver["E17"]["median"]:.4f} at E17.',
+        "liver_diffusion_by_stage": f'<strong>Stage view.</strong> The calculation inferred the {trajectory["root_stage"]} cell <code>{trajectory["root_cell"]}</code> as the root.',
+        "liver_diffusion_pseudotime": f'<strong>DPT view.</strong> Root: <code>{dpt["root_cell"]}</code>. Pseudotime ranges from {dpt["minimum"]:.4f} to {dpt["maximum"]:.4f} (median {dpt["median"]:.4f}). The paths connect the root branch to the two differentiated branches.',
+        "stomach_regulatory_activity": f'<strong>Calculated result.</strong> Across the 32 stomach-regulon transcription factors, median cell-level average activity is {stomach["undiffEpi"]["median"]:.4f} in {stomach["undiffEpi"]["n"]} undifferentiated epithelial cells and {stomach["diffEpi"]["median"]:.4f} in {stomach["diffEpi"]["n"]} differentiated epithelial cells.',
+    }
+    html = html_path.read_text(encoding="utf-8")
+    for name, caption in captions.items():
+        pattern = rf'(data-source="images/{re.escape(name)}\.png"[^>]*>\s*<figcaption>).*?(</figcaption>)'
+        html, count = re.subn(pattern, lambda match: match[1] + caption + match[2], html, flags=re.DOTALL)
+        if count != 1:
+            raise RuntimeError(f"Expected one caption for {name}, found {count}")
+    html_path.write_text(html, encoding="utf-8")
+
+
 def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     """Calculate all tutorial analyses and write figures plus a summary."""
 
@@ -140,12 +171,13 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     summary: dict[str, object] = {
         "generator": "tools/generate_tutorial_plots.py",
         "random_seed": 260721,
+        "ppi_network": "ppi_PC_2016",
     }
 
-    network = load_ppi("2012")
+    network = load_ppi("ppi_PC_2016")
     chu = load_dataset("chu")
-    integrated = integrate_expression_network(chu["expression"], network)
-    entropy_result = compute_signaling_entropy(integrated, n_jobs=n_jobs)
+    integrated = DoIntegPPI(chu["expression"], network)
+    entropy_result = CompSRana(integrated, n_jobs=n_jobs)
     entropy = entropy_result.signaling_entropy
     chu_groups = chu["phenotype"]
     _grouped_boxplot(
@@ -159,7 +191,7 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     )
     summary["chu_signaling_entropy"] = _summary_by_group(entropy, chu_groups)
 
-    chu_ccat = compute_ccat(chu["expression"], network)
+    chu_ccat = CompCCAT(chu["expression"], network)
     _grouped_boxplot(
         chu_ccat,
         chu_groups,
@@ -171,9 +203,9 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     )
     summary["chu_ccat"] = _summary_by_group(chu_ccat, chu_groups)
 
-    states = infer_potency_states(
-        entropy,
-        score_type="signaling_entropy",
+    states = InferPotencyStates(
+        chu_ccat,
+        score_type="ccat",
         phenotype=chu_groups,
         random_state=0,
     )
@@ -204,7 +236,7 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     }
 
     liver = load_dataset("liver")
-    liver_ccat = compute_ccat(liver["expression"], network)
+    liver_ccat = CompCCAT(liver["expression"], network)
     liver_stages = pd.Series(liver["stage_codes"].index, index=liver_ccat.index)
     stage_order = ["E10", "E11", "E12", "E13", "E14", "E15", "E17"]
     stage_palette = [str(color) for color in liver["plot_colors"].to_numpy()]
@@ -220,7 +252,7 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     )
     summary["liver_ccat"] = _summary_by_group(liver_ccat, liver_stages)
 
-    trajectory = infer_diffusion_root(
+    trajectory = InferDMAPandRoot(
         liver_ccat,
         liver["expression"],
         k_neighbors=30,
@@ -324,8 +356,8 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
     }
 
     stomach = load_dataset("stomach")
-    activity = estimate_regulatory_activity(
-        stomach["expression"], tissue="stomach", normalization="zscore", n_jobs=n_jobs
+    activity = SciraEstRegAct(
+        stomach["expression"], tissue="stomach", norm="z", n_jobs=n_jobs
     )
     average_activity = activity.mean(axis=0, skipna=True)
     stomach_groups = stomach["differentiation_state"]
@@ -344,7 +376,11 @@ def generate(output_dir: Path, summary_path: Path, n_jobs: int) -> None:
 
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    update_captions(output_dir.parent / "index.html", summary)
     embed_images(output_dir.parent / "index.html")
+    from render_tutorial_outputs import render_outputs
+
+    render_outputs(output_dir.parent / "index.html")
 
 
 def main() -> None:

@@ -1,12 +1,13 @@
 \docType{data}
-\name{net17Jan16}
-\alias{net17Jan16}
+\name{ppi_PC_2016}
+\alias{ppi_PC_2016}
+\alias{ppi_PC_2016.m}
 \title{PPI network from Pathway Commons-v2}
 \format{Adjacency matrix for the PPI network  
 }
 
 \usage{
-data(net17Jan16)
+data(ppi_PC_2016)
 }
 \description{
 Adjacency matrix describing a curated PPI network derived from Pathway
@@ -18,7 +19,7 @@ reported. Please see references for detailed construction of the PPI network.
 \details{
 Upon loading the data object, we find the following:
 \itemize{
-  \item \code{net17Jan16.m}: the adjacency matrix
+  \item \code{ppi_PC_2016.m}: the adjacency matrix
 }
 }
 \references{

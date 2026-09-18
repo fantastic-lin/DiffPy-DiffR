@@ -161,13 +161,13 @@ def _activity(expression: np.ndarray, regulon: np.ndarray) -> np.ndarray:
 _activity_numba = njit(cache=True, nogil=True)(_activity)
 
 
-def estimate_regulatory_activity(
+def SciraEstRegAct(
     expression: Any,
     tissue: str,
     *,
     expression_row_names: Iterable[Any] | None = None,
     expression_col_names: Iterable[Any] | None = None,
-    normalization: str = "zscore",
+    norm: str = "z",
     n_jobs: int = 1,
 ) -> pd.DataFrame | pd.Series:
     """Estimate transcription-factor activity from regulon target expression.
@@ -189,9 +189,9 @@ def estimate_regulatory_activity(
         Gene identifiers for unlabeled expression arrays.
     expression_col_names
         Cell identifiers for unlabeled expression arrays.
-    normalization
-        Gene-wise preprocessing applied across cells: ``"zscore"`` subtracts
-        the row mean and divides by sample standard deviation; ``"center"``
+    norm
+        Gene-wise preprocessing applied across cells: ``"z"`` subtracts
+        the row mean and divides by sample standard deviation; ``"c"``
         subtracts only the row mean.
     n_jobs
         Number of worker threads used for matrix input.
@@ -216,11 +216,11 @@ def estimate_regulatory_activity(
 
     Examples
     --------
-    >>> from diffpy import estimate_regulatory_activity
+    >>> from diffpy import SciraEstRegAct
     >>> from diffpy.datasets import load_dataset
     >>> stomach = load_dataset("stomach", data_dir="/path/to/diffpy-data")
-    >>> activity = estimate_regulatory_activity(
-    ...     stomach["expression"], tissue="stomach", normalization="zscore"
+    >>> activity = SciraEstRegAct(
+    ...     stomach["expression"], tissue="stomach", norm="z"
     ... )
     >>> activity.shape[1] == stomach["expression"].shape[1]
     True
@@ -237,7 +237,7 @@ def estimate_regulatory_activity(
     dense matrix.
     """
 
-    normalization_key = normalization.lower().replace("-", "").replace("_", "")
+    normalization_key = norm.lower().replace("-", "").replace("_", "")
     normalization_lookup = {
         "zscore": "z",
         "z": "z",
@@ -246,7 +246,7 @@ def estimate_regulatory_activity(
         "c": "c",
     }
     if normalization_key not in normalization_lookup:
-        raise ValueError("normalization must be 'zscore' or 'center'")
+        raise ValueError("norm must be 'z' or 'c'")
     normalization_mode = normalization_lookup[normalization_key]
     if n_jobs == 0:
         raise ValueError("n_jobs cannot be zero")

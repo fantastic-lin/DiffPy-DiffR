@@ -12,7 +12,7 @@ from numba import njit
 from scipy import sparse
 from scipy.sparse.linalg import eigsh
 
-from .integration import IntegrationResult
+from .DoIntegPPI import IntegrationResult
 
 
 @dataclass(frozen=True)
@@ -159,7 +159,7 @@ def _validate_integration(
     Parameters
     ----------
     integrated
-        Output of :func:`diffpy.integrate_expression_network`.
+        Output of :func:`diffpy.DoIntegPPI`.
 
     Returns
     -------
@@ -177,7 +177,7 @@ def _validate_integration(
     if not isinstance(integrated, IntegrationResult):
         raise TypeError(
             "integrated must be an IntegrationResult returned by "
-            "integrate_expression_network"
+            "DoIntegPPI"
         )
     adjacency = sparse.csr_matrix(integrated.adjacency.values, dtype=float)
     adjacency.sort_indices()
@@ -186,7 +186,7 @@ def _validate_integration(
     return integrated.expression, adjacency
 
 
-def compute_signaling_entropy(
+def CompSRana(
     integrated: IntegrationResult,
     *,
     include_normalized_local: bool = False,
@@ -198,7 +198,7 @@ def compute_signaling_entropy(
     ----------
     integrated
         Aligned expression and adjacency matrices returned by
-        :func:`~diffpy.integrate_expression_network`. Dense and sparse
+        :func:`~diffpy.DoIntegPPI`. Dense and sparse
         expression and adjacency matrices are all supported.
     include_normalized_local
         Calculate local entropy normalized by the logarithm of the number of
@@ -226,11 +226,11 @@ def compute_signaling_entropy(
 
     Examples
     --------
-    >>> from diffpy import integrate_expression_network, compute_signaling_entropy
+    >>> from diffpy import DoIntegPPI, CompSRana
     >>> from diffpy.datasets import load_dataset, load_ppi
     >>> chu = load_dataset("chu", data_dir="/path/to/diffpy-data")
-    >>> integrated = integrate_expression_network(chu["expression"], load_ppi("2012"))
-    >>> result = compute_signaling_entropy(integrated, n_jobs=4)
+    >>> integrated = DoIntegPPI(chu["expression"], load_ppi("2012"))
+    >>> result = CompSRana(integrated, n_jobs=4)
     >>> result.signaling_entropy.shape[0] == chu["expression"].shape[1]
     True
 

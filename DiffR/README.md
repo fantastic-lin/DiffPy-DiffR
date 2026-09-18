@@ -16,7 +16,7 @@ output:
 
 # Summary
 
-The `DiffR` package supports two complementary analyses of single-cell RNA-sequencing data. SCENT and its fast proxy CCAT estimate the differentiation potency of individual cells without requiring prior biological information such as marker expression or sampling time. SCIRA estimates the regulatory activity of tissue-specific transcription factors (TFs) from their target-gene expression patterns.
+The `DiffR` package supports two complementary analyses of single-cell RNA-sequencing data. SCENT and its fast proxy CCAT estimate the differentiation potency of individual cells without requiring prior biological information such as marker expression or sampling time. SCIRA estimates the regulatory activity of tissue-specific transcription factors (TFs) in epithelial cells from their target-gene expression patterns.
 
 SCENT is useful when marker genes are affected by dropout, differentiation hierarchies are not well established, or putative cancer stem-cell phenotypes are of interest. SCIRA complements this analysis by assigning an inferred activity score to each TF in each cell.
 
@@ -39,7 +39,7 @@ Sys.setenv(DIFFR_TEST_DATA_DIR = file.path(getwd(), "DiffR_test_data"))
 load(file.path(Sys.getenv("DIFFR_TEST_DATA_DIR"), "dataChu.rda"))
 ```
 
-Both PPI networks and all nine tissue-specific regulon networks remain bundled
+All four PPI networks and all nine tissue-specific regulon networks remain bundled
 with DiffR and continue to load through `data()`.
 
 # References

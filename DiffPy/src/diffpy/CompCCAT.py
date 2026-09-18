@@ -57,7 +57,7 @@ def _column_correlations(matrix: Any, target: np.ndarray) -> np.ndarray:
     return np.clip(result, -1.0, 1.0)
 
 
-def compute_ccat(
+def CompCCAT(
     expression: Any,
     network: Any,
     *,
@@ -109,10 +109,10 @@ def compute_ccat(
 
     Examples
     --------
-    >>> from diffpy import compute_ccat
+    >>> from diffpy import CompCCAT
     >>> from diffpy.datasets import load_dataset, load_ppi
     >>> liver = load_dataset("liver", data_dir="/path/to/diffpy-data")
-    >>> scores = compute_ccat(liver["expression"], load_ppi("2012"))
+    >>> scores = CompCCAT(liver["expression"], load_ppi("2012"))
     >>> scores.shape[0] == liver["expression"].shape[1]
     True
 

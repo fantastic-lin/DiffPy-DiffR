@@ -1,27 +1,27 @@
 """Run a compact potency and regulatory-activity workflow."""
 
 from diffpy import (
-    compute_ccat,
+    CompCCAT,
     compute_diffusion_pseudotime,
-    compute_signaling_entropy,
-    estimate_regulatory_activity,
-    infer_diffusion_root,
-    infer_potency_states,
-    integrate_expression_network,
+    CompSRana,
+    SciraEstRegAct,
+    InferDMAPandRoot,
+    InferPotencyStates,
+    DoIntegPPI,
 )
 from diffpy.datasets import load_dataset, load_ppi
 
 
 chu = load_dataset("chu")
-network = load_ppi("2012")
+network = load_ppi("ppi_PC_2016")
 
 # Network integration expects library-size-normalized, unlogged, nonnegative
 # expression and always applies log2(x + 1.1). Its expression output is dense.
-integrated = integrate_expression_network(chu["expression"], network)
-entropy = compute_signaling_entropy(integrated, n_jobs=1)
+integrated = DoIntegPPI(chu["expression"], network)
+entropy = CompSRana(integrated, n_jobs=1)
 
-ccat = compute_ccat(chu["expression"], network)
-states = infer_potency_states(
+ccat = CompCCAT(chu["expression"], network)
+states = InferPotencyStates(
     ccat,
     score_type="ccat",
     phenotype=chu["phenotype"],
@@ -37,8 +37,8 @@ print("Potency-state distribution:")
 print(states.distribution)
 
 liver = load_dataset("liver")
-liver_ccat = compute_ccat(liver["expression"], network)
-trajectory = infer_diffusion_root(
+liver_ccat = CompCCAT(liver["expression"], network)
+trajectory = InferDMAPandRoot(
     liver_ccat,
     liver["expression"],
     k_neighbors=30,
@@ -59,10 +59,10 @@ print(
 print("Diffusion branch tips:", dpt.tip_cells)
 
 stomach = load_dataset("stomach")
-activity = estimate_regulatory_activity(
+activity = SciraEstRegAct(
     stomach["expression"],
     tissue="stomach",
-    normalization="zscore",
+    norm="z",
     n_jobs=1,
 )
 average_tf_activity = activity.mean(axis=0)

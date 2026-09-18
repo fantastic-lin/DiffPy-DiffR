@@ -9,8 +9,12 @@
   (embryonic stages).
 }
 
-\usage{
+\section{Loading the external data}{
+After extracting \file{DiffR_test_data.tar.gz}, set
+\env{DIFFR_TEST_DATA_DIR} to its top-level directory and run:
+\preformatted{
 load(file.path(Sys.getenv("DIFFR_TEST_DATA_DIR"), "dataLiver.rda"))
+}
 }
 \description{
 The data has been normalized for library-size with cell-dependent
