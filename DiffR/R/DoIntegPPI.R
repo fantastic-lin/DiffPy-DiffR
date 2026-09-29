@@ -18,7 +18,7 @@
 #' colnames labeling genes (same gene identifier as in \code{exp.m})
 #' 
 #' 
-#' @return A list of two or four objects:
+#' @return A list with two elements:
 #' 
 #' @return expMC
 #' Reduced expression matrix with genes in the maximally connected subnetwork

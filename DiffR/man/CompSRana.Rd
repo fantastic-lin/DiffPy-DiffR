@@ -33,8 +33,8 @@ locS
 The unnormalised local entropies of each gene in every cell
 
 nlocS
-The normalised local entropies of each gene, so that each value is 
-between 0 and 1
+If \code{local = TRUE}, the normalised local entropies of each gene, so that
+each value is between 0 and 1. If \code{local = FALSE}, NULL.
 }
 \description{
 This is the main user function for computing signaling entropy of 

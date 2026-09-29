@@ -32,7 +32,7 @@ class SignalingEntropyResult:
         Unnormalized gene-by-cell entropy of outgoing transition probabilities.
     normalized_local_entropy
         Optional local entropy normalized by the logarithm of each gene's
-        positive neighbor count. Present only when requested.
+        fixed positive PPI-network degree. Present only when requested.
     maximum_entropy
         Logarithm of the leading network eigenvalue used to normalize global
         entropy.
@@ -127,8 +127,10 @@ def _one_cell(
                 normalized[gene] = 0.0
             continue
         entropy = 0.0
-        positive_neighbors = 0
+        network_degree = 0
         for position in range(indptr[gene], indptr[gene + 1]):
+            if edge_values[position] > 0.0:
+                network_degree += 1
             probability = (
                 edge_values[position]
                 * expression[indices[position]]
@@ -136,12 +138,11 @@ def _one_cell(
             )
             if probability > 0.0 and np.isfinite(probability):
                 entropy -= probability * np.log(probability)
-                positive_neighbors += 1
         local_entropy[gene] = entropy
         if include_normalized_local:
             normalized[gene] = (
-                entropy / np.log(positive_neighbors)
-                if positive_neighbors > 1
+                entropy / np.log(network_degree)
+                if network_degree > 1
                 else 0.0
             )
 
@@ -201,8 +202,8 @@ def CompSRana(
         :func:`~diffpy.DoIntegPPI`. Dense and sparse
         expression and adjacency matrices are all supported.
     include_normalized_local
-        Calculate local entropy normalized by the logarithm of the number of
-        positive transition probabilities. This adds one gene-by-cell output
+        Calculate local entropy normalized by the logarithm of each gene's
+        fixed positive PPI-network degree. This adds one gene-by-cell output
         matrix and therefore increases memory use.
     n_jobs
         Number of parallel worker threads. Use ``-1`` to request all available

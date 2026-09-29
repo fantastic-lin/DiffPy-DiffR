@@ -14,7 +14,7 @@ with a pseudocount of 1.1}
 colnames labeling genes (same gene identifier as in \code{exp.m})}
 }
 \value{
-A list of two or four objects:
+A list with two elements:
 
 expMC
 Reduced expression matrix with genes in the maximally connected subnetwork
